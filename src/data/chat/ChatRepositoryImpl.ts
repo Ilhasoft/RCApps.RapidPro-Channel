@@ -29,17 +29,18 @@ export default class ChatRepositoryImpl implements IChatRepository {
         const [type, userIdentifier] = [userUrn.substring(0, userUrn.indexOf(':')), userUrn.substring(userUrn.indexOf(':') + 1)];
 
         if (type === 'direct') {
-            if (!await this.internalDataSource.getUserByUsername(userIdentifier)) {
+            const user = await this.internalDataSource.getUserByUsername(userIdentifier);
+            if (!user) {
                 throw new AppError(`User not found ${userUrn}`, HttpStatusCode.BAD_REQUEST);
             }
-            return await this.internalDataSource.sendMessage(botUser, userIdentifier, text, attachments);
+            return await this.internalDataSource.sendMessage(botUser, user, text, attachments);
         } else if (type === 'livechat') {
             const visitor = await this.internalDataSource.getVisitorByToken(userIdentifier);
             if (!visitor) {
                 throw new AppError(`Could not find visitor with token: ${userIdentifier}`, HttpStatusCode.NOT_FOUND);
             }
 
-            return await this.internalDataSource.sendLivechatMessage(botUser, visitor, text);
+            return await this.internalDataSource.sendLivechatMessage(botUser, visitor, text, attachments);
         } else {
             throw new AppError(`Invalid room type: ${type}`, HttpStatusCode.BAD_REQUEST);
         }

@@ -9,8 +9,8 @@ import ChatWebhook from '../../remote/chat/ChatWebhook';
 
 export default class InstanceHelper {
 
-    public static async newDefaultChatInternalDataSource(read: IRead, modify: IModify): Promise<IChatInternalDataSource> {
-        return new ChatAppsEngine(read, modify);
+    public static async newDefaultChatInternalDataSource(read: IRead, modify: IModify, http: IHttp): Promise<IChatInternalDataSource> {
+        return new ChatAppsEngine(read, modify, http);
     }
 
     public static async newDefaultChatWebhook(http: IHttp, read: IRead, secret: string): Promise<IChatWebhook> {
