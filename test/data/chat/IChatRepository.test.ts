@@ -1,14 +1,15 @@
 import 'mocha';
 
-import { assert } from 'chai';
-import {anyString, instance, mock, verify, when} from 'ts-mockito';
-import IChatInternalDataSource from '../../../src/data/chat/IChatInternalDataSource';
-import IChatWebhook from '../../../src/data/chat/IChatWebhook';
-import IAppDataSource from '../../../src/data/app/IAppDataSource';
-import IChatRepository from '../../../src/data/chat/IChatRepository';
-import ChatRepositoryImpl from '../../../src/data/chat/ChatRepositoryImpl';
-import AppError from '../../../src/domain/AppError';
 import { HttpStatusCode } from '@rocket.chat/apps-engine/definition/accessors';
+import { assert } from 'chai';
+import { instance, mock, verify, when } from 'ts-mockito';
+
+import IAppDataSource from '../../../src/data/app/IAppDataSource';
+import ChatRepositoryImpl from '../../../src/data/chat/ChatRepositoryImpl';
+import IChatInternalDataSource from '../../../src/data/chat/IChatInternalDataSource';
+import IChatRepository from '../../../src/data/chat/IChatRepository';
+import IChatWebhook from '../../../src/data/chat/IChatWebhook';
+import AppError from '../../../src/domain/AppError';
 import userFactory from '../../factories/UserFactory';
 import visitorFactory from '../../factories/VisitorFactory';
 
@@ -55,7 +56,7 @@ describe('IChatRepository', () => {
             const text = 'hello';
             const attachments = [];
 
-            const botUser = userFactory.build({username: botUsername , roles: ['bot']});
+            const botUser = userFactory.build({ username: botUsername, roles: ['bot'] });
 
             when(mockedInternal.getUserByUsername(botUsername)).thenResolve(botUser);
 
@@ -75,7 +76,7 @@ describe('IChatRepository', () => {
             const text = 'hello';
             const attachments = [];
 
-            const botUser = userFactory.build({username: botUsername , roles: ['bot']});
+            const botUser = userFactory.build({ username: botUsername, roles: ['bot'] });
             const [type, userIdentifier] = [userUrn.substring(0, userUrn.indexOf(':')), userUrn.substring(userUrn.indexOf(':') + 1)];
 
             when(mockedInternal.getUserByUsername(botUsername)).thenResolve(botUser);
@@ -91,19 +92,41 @@ describe('IChatRepository', () => {
             }
         });
 
-        it(`should send the message when the user is found`, async () => {
+        it(`should send the message with no attachments when the user is found`, async () => {
+            const userUrn = 'direct:userName';
+            const botUsername = 'botName';
+            const text = 'hello';
+            const attachments = undefined;
+
+            const botUser = userFactory.build({ username: botUsername, roles: ['bot'] });
+            const [type, userIdentifier] = [userUrn.substring(0, userUrn.indexOf(':')), userUrn.substring(userUrn.indexOf(':') + 1)];
+            const user = userFactory.build({ username: userIdentifier });
+
+            when(mockedInternal.getUserByUsername(botUsername)).thenResolve(botUser);
+            when(mockedInternal.getUserByUsername(userIdentifier)).thenResolve(user);
+            when(mockedInternal.sendMessage(botUser, user, text, attachments)).thenResolve('3YffpUPb957Ca2Zx');
+
+            try {
+                const messageId = await chatRepo.sendMessage(userUrn, botUsername, text, attachments);
+                assert.equal(messageId, '3YffpUPb957Ca2Zx');
+            } catch (e) {
+                assert.fail(e.message);
+            }
+        });
+
+        it(`should send the message with attachments when the user is found`, async () => {
             const userUrn = 'direct:userName';
             const botUsername = 'botName';
             const text = 'hello';
             const attachments = [];
 
-            const botUser = userFactory.build({username: botUsername , roles: ['bot']});
+            const botUser = userFactory.build({ username: botUsername, roles: ['bot'] });
             const [type, userIdentifier] = [userUrn.substring(0, userUrn.indexOf(':')), userUrn.substring(userUrn.indexOf(':') + 1)];
-            const user = userFactory.build({username: userIdentifier});
+            const user = userFactory.build({ username: userIdentifier });
 
             when(mockedInternal.getUserByUsername(botUsername)).thenResolve(botUser);
             when(mockedInternal.getUserByUsername(userIdentifier)).thenResolve(user);
-            when(mockedInternal.sendMessage(botUser, userIdentifier, text, attachments)).thenResolve('3YffpUPb957Ca2Zx');
+            when(mockedInternal.sendMessage(botUser, user, text, attachments)).thenResolve('3YffpUPb957Ca2Zx');
 
             try {
                 const messageId = await chatRepo.sendMessage(userUrn, botUsername, text, attachments);
@@ -118,7 +141,7 @@ describe('IChatRepository', () => {
             const botUsername = 'botName';
             const text = 'hello';
 
-            const botUser = userFactory.build({username: botUsername , roles: ['bot']});
+            const botUser = userFactory.build({ username: botUsername, roles: ['bot'] });
             const [type, userIdentifier] = [userUrn.substring(0, userUrn.indexOf(':')), userUrn.substring(userUrn.indexOf(':') + 1)];
 
             when(mockedInternal.getUserByUsername(botUsername)).thenResolve(botUser);
@@ -134,21 +157,44 @@ describe('IChatRepository', () => {
             }
         });
 
-        it(`should send the message when the visitor is found`, async () => {
+        it(`should send the message with no attachments when the visitor is found`, async () => {
             const userUrn = 'livechat:1234';
             const botUsername = 'botName';
             const text = 'hello';
+            const attachments = undefined;
 
-            const botUser = userFactory.build({username: botUsername , roles: ['bot']});
+            const botUser = userFactory.build({ username: botUsername, roles: ['bot'] });
             const [type, userIdentifier] = [userUrn.substring(0, userUrn.indexOf(':')), userUrn.substring(userUrn.indexOf(':') + 1)];
-            const visitor = visitorFactory.build({token: userIdentifier});
+            const visitor = visitorFactory.build({ token: userIdentifier });
 
             when(mockedInternal.getUserByUsername(botUsername)).thenResolve(botUser);
             when(mockedInternal.getVisitorByToken(userIdentifier)).thenResolve(visitor);
-            when(mockedInternal.sendLivechatMessage(botUser, visitor, text)).thenResolve('3YffpUPb957Ca2Zx');
+            when(mockedInternal.sendLivechatMessage(botUser, visitor, text, attachments)).thenResolve('3YffpUPb957Ca2Zx');
 
             try {
-                const messageId = await chatRepo.sendMessage(userUrn, botUsername, text);
+                const messageId = await chatRepo.sendMessage(userUrn, botUsername, text, attachments);
+                assert.equal(messageId, '3YffpUPb957Ca2Zx');
+            } catch (e) {
+                assert.fail(e.message);
+            }
+        });
+
+        it(`should send the message with attachments when the visitor is found`, async () => {
+            const userUrn = 'livechat:1234';
+            const botUsername = 'botName';
+            const text = 'hello';
+            const attachments = [];
+
+            const botUser = userFactory.build({ username: botUsername, roles: ['bot'] });
+            const [type, userIdentifier] = [userUrn.substring(0, userUrn.indexOf(':')), userUrn.substring(userUrn.indexOf(':') + 1)];
+            const visitor = visitorFactory.build({ token: userIdentifier });
+
+            when(mockedInternal.getUserByUsername(botUsername)).thenResolve(botUser);
+            when(mockedInternal.getVisitorByToken(userIdentifier)).thenResolve(visitor);
+            when(mockedInternal.sendLivechatMessage(botUser, visitor, text, attachments)).thenResolve('3YffpUPb957Ca2Zx');
+
+            try {
+                const messageId = await chatRepo.sendMessage(userUrn, botUsername, text, attachments);
                 assert.equal(messageId, '3YffpUPb957Ca2Zx');
             } catch (e) {
                 assert.fail(e.message);
@@ -160,7 +206,7 @@ describe('IChatRepository', () => {
             const botUsername = 'botName';
             const text = 'hello';
 
-            const botUser = userFactory.build({username: botUsername , roles: ['bot']});
+            const botUser = userFactory.build({ username: botUsername, roles: ['bot'] });
             const [type, userIdentifier] = [userUrn.substring(0, userUrn.indexOf(':')), userUrn.substring(userUrn.indexOf(':') + 1)];
 
             when(mockedInternal.getUserByUsername(botUsername)).thenResolve(botUser);
