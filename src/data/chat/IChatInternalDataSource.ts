@@ -5,9 +5,9 @@ import IAttachment from '../../domain/Attachment';
 
 export default interface IChatInternalDataSource {
 
-    sendLivechatMessage(botAgent: IUser, visitor: IVisitor, text?: string): Promise<string>;
+    sendLivechatMessage(botAgent: IUser, visitor: IVisitor, text?: string, attachments?: Array<IAttachment>): Promise<string>;
 
-    sendMessage(bot: IUser, userUsername: string, text?: string, attachments?: Array<IAttachment>): Promise<string>;
+    sendMessage(bot: IUser, user: IUser, text?: string, attachments?: Array<IAttachment>): Promise<string>;
 
     getUserByUsername(username: string): Promise<IUser | undefined>;
 

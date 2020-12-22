@@ -50,7 +50,7 @@ export class MessageEndpoint extends ApiEndpoint {
         const secret = await read.getEnvironmentReader().getSettings().getValueById(CONFIG_APP_SECRET);
 
         const chatRepo = new ChatRepositoryImpl(
-            await InstanceHelper.newDefaultChatInternalDataSource(read, modify),
+            await InstanceHelper.newDefaultChatInternalDataSource(read, modify, http),
             await InstanceHelper.newDefaultChatWebhook(http, read, secret),
             await InstanceHelper.newDefaultAppPersistence(read.getPersistenceReader(), persis),
         );
