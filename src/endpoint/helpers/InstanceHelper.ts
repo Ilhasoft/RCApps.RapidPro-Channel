@@ -13,8 +13,9 @@ export default class InstanceHelper {
         return new ChatAppsEngine(read, modify, http);
     }
 
-    public static async newDefaultChatWebhook(http: IHttp, read: IRead, secret: string): Promise<IChatWebhook> {
-        return new ChatWebhook(read, http, secret);
+    public static async newDefaultChatWebhook(http: IHttp, read: IRead, secret: string, flowsOrgToken: string, roomFieldName: string): Promise<IChatWebhook> {
+        const loweredRoomFieldName = roomFieldName.toLowerCase();
+        return new ChatWebhook(read, http, secret, flowsOrgToken, loweredRoomFieldName);
     }
 
     public static async newDefaultAppPersistence(read: IPersistenceRead, persis: IPersistence): Promise<IAppDataSource> {
