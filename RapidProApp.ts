@@ -88,7 +88,9 @@ export class RapidProIntegrationApp extends App implements IPostMessageSent {
                 message.attachments
             );
 
-            await chatRepo.onVisitorRoomIdField(room.visitor.token, room.id);
+            if (roomFieldName.trim() && flowsOrgToken) {
+                await chatRepo.onVisitorRoomIdField(room.visitor.token, room.id);
+            }
         } else if (message.room.type === RoomType.DIRECT_MESSAGE) {
             const room = message.room;
             if (room['_unmappedProperties_'].usernames.length > 2) {
