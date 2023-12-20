@@ -81,4 +81,7 @@ export default class ChatRepositoryImpl implements IChatRepository {
         return await this.appPersis.getCallbackUrl(botUsername);
     }
 
+    public async onVisitorRoomIdField(visitorToken: string, roomId: string) {
+        await this.chatWebhook.updateVisitorRoomId(visitorToken, roomId);
+    }
 }

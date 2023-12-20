@@ -1,4 +1,6 @@
 {
     "config_app_secret": "App Secret",
-    "config_request_timeout": "Request Timeout"
+    "config_request_timeout": "Request Timeout",
+    "config_flows_org_token": "Flows Org Token",
+    "config_room_field_name": "Room Contact Field Name"
 }

@@ -20,7 +20,7 @@ import { CheckSecretEndpoint } from './src/endpoint/CheckSecretEndpoint';
 import InstanceHelper from './src/endpoint/helpers/InstanceHelper';
 import { MessageEndpoint } from './src/endpoint/MessageEndpoint';
 import { SettingsEndpoint } from './src/endpoint/SettingsEndpoint';
-import { APP_SETTINGS, CONFIG_APP_SECRET } from './src/settings/Constants';
+import { APP_SETTINGS, CONFIG_APP_SECRET, CONFIG_FLOWS_ORG_TOKEN, CONFIG_ROOM_FIELD_NAME } from './src/settings/Constants';
 
 export class RapidProIntegrationApp extends App implements IPostMessageSent {
     constructor(info: IAppInfo, logger: ILogger, accessors: IAppAccessors) {
@@ -57,10 +57,12 @@ export class RapidProIntegrationApp extends App implements IPostMessageSent {
         }
 
         const secret = await read.getEnvironmentReader().getSettings().getValueById(CONFIG_APP_SECRET);
+        const flowsOrgToken = await read.getEnvironmentReader().getSettings().getValueById(CONFIG_FLOWS_ORG_TOKEN);
+        const roomFieldName = await read.getEnvironmentReader().getSettings().getValueById(CONFIG_ROOM_FIELD_NAME);
 
         const chatRepo = new ChatRepositoryImpl(
             await InstanceHelper.newDefaultChatInternalDataSource(read, modify, http),
-            await InstanceHelper.newDefaultChatWebhook(http, read, secret),
+            await InstanceHelper.newDefaultChatWebhook(http, read, secret, flowsOrgToken, roomFieldName),
             await InstanceHelper.newDefaultAppPersistence(read.getPersistenceReader(), persistence),
         );
 
@@ -83,7 +85,12 @@ export class RapidProIntegrationApp extends App implements IPostMessageSent {
                 room.visitor.name,
                 room.visitor.username,
                 message.text,
-                message.attachments);
+                message.attachments
+            );
+
+            if (roomFieldName.trim() && flowsOrgToken) {
+                await chatRepo.onVisitorRoomIdField(room.visitor.token, room.id);
+            }
         } else if (message.room.type === RoomType.DIRECT_MESSAGE) {
             const room = message.room;
             if (room['_unmappedProperties_'].usernames.length > 2) {

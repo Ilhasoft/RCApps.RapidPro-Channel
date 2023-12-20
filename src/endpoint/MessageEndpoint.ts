@@ -3,7 +3,7 @@ import { ApiEndpoint, IApiEndpointInfo, IApiRequest } from '@rocket.chat/apps-en
 import { IApiResponseJSON } from '@rocket.chat/apps-engine/definition/api/IResponse';
 
 import ChatRepositoryImpl from '../data/chat/ChatRepositoryImpl';
-import { CONFIG_APP_SECRET } from '../settings/Constants';
+import { CONFIG_APP_SECRET, CONFIG_FLOWS_ORG_TOKEN, CONFIG_ROOM_FIELD_NAME } from '../settings/Constants';
 import RequestBodyValidator from '../utils/RequestBodyValidator';
 import RequestHeadersValidator from '../utils/RequestHeadersValidator';
 import InstanceHelper from './helpers/InstanceHelper';
@@ -48,10 +48,12 @@ export class MessageEndpoint extends ApiEndpoint {
         await RequestBodyValidator.validate(this.bodyConstraints, request.content);
 
         const secret = await read.getEnvironmentReader().getSettings().getValueById(CONFIG_APP_SECRET);
+        const flowsOrgToken = await read.getEnvironmentReader().getSettings().getValueById(CONFIG_FLOWS_ORG_TOKEN);
+        const roomFieldName = await read.getEnvironmentReader().getSettings().getValueById(CONFIG_ROOM_FIELD_NAME);
 
         const chatRepo = new ChatRepositoryImpl(
             await InstanceHelper.newDefaultChatInternalDataSource(read, modify, http),
-            await InstanceHelper.newDefaultChatWebhook(http, read, secret),
+            await InstanceHelper.newDefaultChatWebhook(http, read, secret, flowsOrgToken, roomFieldName),
             await InstanceHelper.newDefaultAppPersistence(read.getPersistenceReader(), persis),
         );
 

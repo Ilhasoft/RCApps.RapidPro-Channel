@@ -4,8 +4,26 @@ export const RC_SERVER_URL = 'Site_Url';
 
 export const CONFIG_APP_SECRET = 'config_app_secret';
 export const CONFIG_REQUEST_TIMEOUT = 'config_request_timeout';
+export const CONFIG_FLOWS_ORG_TOKEN = 'config_flows_org_token';
+export const CONFIG_ROOM_FIELD_NAME = 'config_room_field_name';
 
 export const APP_SETTINGS: Array<ISetting> = [
+    {
+        id: CONFIG_FLOWS_ORG_TOKEN,
+        type: SettingType.STRING,
+        packageValue: '',
+        required: true,
+        public: false,
+        i18nLabel: CONFIG_FLOWS_ORG_TOKEN,
+    },
+    {
+        id: CONFIG_ROOM_FIELD_NAME,
+        type: SettingType.STRING,
+        packageValue: 'roomId',
+        required: true,
+        public: false,
+        i18nLabel: CONFIG_ROOM_FIELD_NAME,
+    },
     {
         id: CONFIG_APP_SECRET,
         type: SettingType.STRING,

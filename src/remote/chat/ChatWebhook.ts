@@ -1,4 +1,4 @@
-import { IHttp, IRead } from '@rocket.chat/apps-engine/definition/accessors';
+import { IHttp, IHttpRequest, IRead } from '@rocket.chat/apps-engine/definition/accessors';
 import { IMessageAttachment } from '@rocket.chat/apps-engine/definition/messages';
 
 import IChatWebhook from '../../data/chat/IChatWebhook';
@@ -12,6 +12,8 @@ export default class ChatWebhook implements IChatWebhook {
         private readonly read: IRead,
         private readonly http: IHttp,
         private readonly secret: string,
+        private readonly flowsOrgToken: string,
+        private readonly roomFieldName: string,
     ) { }
 
     public async onDirectMessage(
@@ -85,12 +87,37 @@ export default class ChatWebhook implements IChatWebhook {
         return payload;
     }
 
-    private requestOptions(): object {
+    private requestOptions(): IHttpRequest {
         return {
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Token ${this.secret}`,
             },
         };
+    }
+
+    private flowsRequestOptions(): IHttpRequest {
+        return {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Token ${this.flowsOrgToken}`,
+            }
+        }
+    }
+
+    public async updateVisitorRoomId(visitorToken: string, roomId: string): Promise<void> {
+        const reqOptions = this.flowsRequestOptions();
+
+        reqOptions.params = {
+            urn: `rocketchat:livechat:${visitorToken}`,
+        }
+
+        reqOptions.data = {
+            fields: {
+                [this.roomFieldName]: roomId,
+            },
+        };
+
+        const res = await this.http.post('https://flows.weni.ai/api/v2/contacts.json', reqOptions);
     }
 }
