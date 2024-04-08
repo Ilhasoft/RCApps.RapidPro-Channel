@@ -79,6 +79,10 @@ export class RapidProIntegrationApp extends App implements IPostMessageSent {
                 return;
             }
 
+            if (roomFieldName.trim() && flowsOrgToken) {
+                await chatRepo.onVisitorRoomIdField(room.visitor.token, room.id);
+            }
+
             await chatRepo.onLivechatMessage(
                 room.visitor.token,
                 room.servedBy.username,
@@ -87,10 +91,6 @@ export class RapidProIntegrationApp extends App implements IPostMessageSent {
                 message.text,
                 message.attachments
             );
-
-            if (roomFieldName.trim() && flowsOrgToken) {
-                await chatRepo.onVisitorRoomIdField(room.visitor.token, room.id);
-            }
         } else if (message.room.type === RoomType.DIRECT_MESSAGE) {
             const room = message.room;
             if (room['_unmappedProperties_'].usernames.length > 2) {
