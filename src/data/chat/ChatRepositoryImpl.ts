@@ -7,6 +7,7 @@ import IAppDataSource from '../app/IAppDataSource';
 import IChatInternalDataSource from './IChatInternalDataSource';
 import IChatRepository from './IChatRepository';
 import IChatWebhook from './IChatWebhook';
+import { ILivechatRoom, ILivechatTransferEventContext } from '@rocket.chat/apps-engine/definition/livechat';
 
 export default class ChatRepositoryImpl implements IChatRepository {
 
@@ -83,5 +84,13 @@ export default class ChatRepositoryImpl implements IChatRepository {
 
     public async onVisitorRoomIdField(visitorToken: string, roomId: string) {
         await this.chatWebhook.updateVisitorRoomId(visitorToken, roomId);
+    }
+
+    public async onLivechatRoomClosed(visitorToken: string, flowUuid: string, roomData: ILivechatRoom): Promise<void> {
+        await this.chatWebhook.onLivechatRoomClosed(visitorToken, flowUuid, roomData);
+    }
+
+    public async onLivechatRoomTransferred(visitorToken: string, flowUuid: string, context: ILivechatTransferEventContext): Promise<void> {
+        await this.chatWebhook.onLivechatRoomTransferred(visitorToken, flowUuid, context);
     }
 }

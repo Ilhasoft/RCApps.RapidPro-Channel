@@ -5,6 +5,7 @@ import IChatWebhook from '../../data/chat/IChatWebhook';
 import { ChatType } from '../../domain/ChatType';
 import { RC_SERVER_URL } from '../../settings/Constants';
 import AttachmentUtils from '../../utils/AttachmentUtils';
+import { ILivechatRoom, ILivechatTransferEventContext } from '@rocket.chat/apps-engine/definition/livechat';
 
 export default class ChatWebhook implements IChatWebhook {
 
@@ -119,5 +120,29 @@ export default class ChatWebhook implements IChatWebhook {
         };
 
         const res = await this.http.post('https://flows.weni.ai/api/v2/contacts.json', reqOptions);
+    }
+
+    public async onLivechatRoomClosed(visitorToken: string, flowUuid: string, roomData: ILivechatRoom): Promise<void> {
+        const reqOptions = this.flowsRequestOptions();
+
+        reqOptions.data = {
+            flow: flowUuid,
+            urns: [`rocketchat:livechat:${visitorToken}`],
+            extra: roomData,
+        }
+
+        await this.http.post('https://flows.weni.ai/api/v2/flow_starts.json', reqOptions);
+    }
+
+    public async onLivechatRoomTransferred(visitorToken: string, flowUuid: string, context: ILivechatTransferEventContext): Promise<void> {
+        const reqOptions = this.flowsRequestOptions();
+
+        reqOptions.data = {
+            flow: flowUuid,
+            urns: [`rocketchat:livechat:${visitorToken}`],
+            extra: context,
+        }
+
+        await this.http.post('https://flows.weni.ai/api/v2/flow_starts.json', reqOptions);
     }
 }

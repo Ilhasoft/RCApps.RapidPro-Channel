@@ -10,7 +10,7 @@ import {
 } from '@rocket.chat/apps-engine/definition/accessors';
 import { ApiSecurity, ApiVisibility, IApi } from '@rocket.chat/apps-engine/definition/api';
 import { App } from '@rocket.chat/apps-engine/definition/App';
-import { ILivechatRoom } from '@rocket.chat/apps-engine/definition/livechat';
+import { ILivechatRoom, ILivechatTransferEventContext, IPostLivechatRoomClosed, IPostLivechatRoomTransferred, IVisitor } from '@rocket.chat/apps-engine/definition/livechat';
 import { IMessage, IPostMessageSent } from '@rocket.chat/apps-engine/definition/messages';
 import { IAppInfo } from '@rocket.chat/apps-engine/definition/metadata';
 import { RoomType } from '@rocket.chat/apps-engine/definition/rooms';
@@ -20,9 +20,9 @@ import { CheckSecretEndpoint } from './src/endpoint/CheckSecretEndpoint';
 import InstanceHelper from './src/endpoint/helpers/InstanceHelper';
 import { MessageEndpoint } from './src/endpoint/MessageEndpoint';
 import { SettingsEndpoint } from './src/endpoint/SettingsEndpoint';
-import { APP_SETTINGS, CONFIG_APP_SECRET, CONFIG_FLOWS_ORG_TOKEN, CONFIG_ROOM_FIELD_NAME } from './src/settings/Constants';
+import { APP_SETTINGS, CONFIG_APP_SECRET, CONFIG_CLOSE_ROOM_FLOW, CONFIG_FLOWS_ORG_TOKEN, CONFIG_ROOM_FIELD_NAME, CONFIG_TRANSFER_ROOM_FLOW } from './src/settings/Constants';
 
-export class RapidProIntegrationApp extends App implements IPostMessageSent {
+export class RapidProIntegrationApp extends App implements IPostMessageSent, IPostLivechatRoomClosed, IPostLivechatRoomTransferred {
     constructor(info: IAppInfo, logger: ILogger, accessors: IAppAccessors) {
         super(info, logger, accessors);
     }
@@ -104,6 +104,58 @@ export class RapidProIntegrationApp extends App implements IPostMessageSent {
             await chatRepo.onDirectMessage(message.sender.username, botUsername, message.sender.name, message.text, message.attachments);
         }
 
+    }
+
+    public async executePostLivechatRoomClosed(
+        data: ILivechatRoom,
+        read: IRead,
+        http: IHttp,
+        persistence: IPersistence,
+        modify: IModify,
+    ) {
+        try {
+            const visitor: IVisitor = data.visitor as IVisitor;
+
+            const secret = await read.getEnvironmentReader().getSettings().getValueById(CONFIG_APP_SECRET);
+            const flowsOrgToken = await read.getEnvironmentReader().getSettings().getValueById(CONFIG_FLOWS_ORG_TOKEN);
+            const roomFieldName = await read.getEnvironmentReader().getSettings().getValueById(CONFIG_ROOM_FIELD_NAME);
+            const flowUuid = await read.getEnvironmentReader().getSettings().getValueById(CONFIG_CLOSE_ROOM_FLOW);
+
+            const chatRepo = new ChatRepositoryImpl(
+                await InstanceHelper.newDefaultChatInternalDataSource(read, modify, http),
+                await InstanceHelper.newDefaultChatWebhook(http, read, secret, flowsOrgToken, roomFieldName),
+                await InstanceHelper.newDefaultAppPersistence(read.getPersistenceReader(), persistence),
+            );
+
+            if (flowUuid) {
+                await chatRepo.onLivechatRoomClosed(visitor.token, flowUuid, data);
+            }
+        } catch (e) {
+            this.getLogger().error(e.message);
+        }
+    }
+
+    public async executePostLivechatRoomTransferred(context: ILivechatTransferEventContext, read: IRead, http: IHttp, persistence: IPersistence, modify: IModify) {
+        try {
+            const visitor: any = (context.room as ILivechatRoom).visitor;
+
+            const secret = await read.getEnvironmentReader().getSettings().getValueById(CONFIG_APP_SECRET);
+            const flowsOrgToken = await read.getEnvironmentReader().getSettings().getValueById(CONFIG_FLOWS_ORG_TOKEN);
+            const roomFieldName = await read.getEnvironmentReader().getSettings().getValueById(CONFIG_ROOM_FIELD_NAME);
+            const flowUuid = await read.getEnvironmentReader().getSettings().getValueById(CONFIG_TRANSFER_ROOM_FLOW);
+
+            const chatRepo = new ChatRepositoryImpl(
+                await InstanceHelper.newDefaultChatInternalDataSource(read, modify, http),
+                await InstanceHelper.newDefaultChatWebhook(http, read, secret, flowsOrgToken, roomFieldName),
+                await InstanceHelper.newDefaultAppPersistence(read.getPersistenceReader(), persistence),
+            );
+
+            if (flowUuid) {
+                await chatRepo.onLivechatRoomTransferred(visitor.token, flowUuid, context);
+            }
+        } catch (e) {
+            this.getLogger().error(e.message);
+        }
     }
 
 }

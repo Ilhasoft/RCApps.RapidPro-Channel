@@ -1,4 +1,5 @@
 import { IMessageAttachment } from '@rocket.chat/apps-engine/definition/messages';
+import { ILivechatRoom, ILivechatTransferEventContext } from '@rocket.chat/apps-engine/definition/livechat';
 
 import IAttachment from '../../domain/Attachment';
 
@@ -10,4 +11,7 @@ export default interface IChatRepository {
 
     onLivechatMessage(visitorToken: string, botUsername: string, userFullName: string, userUsername: string, message?: string, attachments?: Array<IMessageAttachment>): Promise<void>;
 
+    onLivechatRoomClosed(visitorToken: string, flowUuid: string, roomData: ILivechatRoom): Promise<void>;
+
+    onLivechatRoomTransferred(visitorToken: string, flowUuid: string, context: ILivechatTransferEventContext): Promise<void>;
 }

@@ -6,6 +6,8 @@ export const CONFIG_APP_SECRET = 'config_app_secret';
 export const CONFIG_REQUEST_TIMEOUT = 'config_request_timeout';
 export const CONFIG_FLOWS_ORG_TOKEN = 'config_flows_org_token';
 export const CONFIG_ROOM_FIELD_NAME = 'config_room_field_name';
+export const CONFIG_CLOSE_ROOM_FLOW = 'config_close_room_flow';
+export const CONFIG_TRANSFER_ROOM_FLOW = 'config_transfer_room_flow';
 
 export const APP_SETTINGS: Array<ISetting> = [
     {
@@ -39,5 +41,21 @@ export const APP_SETTINGS: Array<ISetting> = [
         required: true,
         public: false,
         i18nLabel: CONFIG_REQUEST_TIMEOUT,
+    },
+    {
+        id: CONFIG_CLOSE_ROOM_FLOW,
+        type: SettingType.STRING,
+        packageValue: '',
+        required: true,
+        public: false,
+        i18nLabel: CONFIG_CLOSE_ROOM_FLOW,
+    },
+    {
+        id: CONFIG_TRANSFER_ROOM_FLOW,
+        type: SettingType.STRING,
+        packageValue: '',
+        required: true,
+        public: false,
+        i18nLabel: CONFIG_TRANSFER_ROOM_FLOW,
     },
 ];
