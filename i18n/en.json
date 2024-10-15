@@ -4,5 +4,6 @@
     "config_flows_org_token": "Flows Org Token",
     "config_room_field_name": "Room Contact Field Name",
     "config_close_room_flow": "Close Room Flow UUID",
-    "config_transfer_room_flow": "Transfer Room Flow UUID"
+    "config_transfer_room_flow": "Transfer Room Flow UUID",
+    "config_advanced_logging": "Enable more logs"
 }

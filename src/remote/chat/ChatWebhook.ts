@@ -1,4 +1,4 @@
-import { IHttp, IHttpRequest, IRead } from '@rocket.chat/apps-engine/definition/accessors';
+import { IHttp, IHttpRequest, ILogger, IRead } from '@rocket.chat/apps-engine/definition/accessors';
 import { IMessageAttachment } from '@rocket.chat/apps-engine/definition/messages';
 
 import IChatWebhook from '../../data/chat/IChatWebhook';
@@ -15,7 +15,15 @@ export default class ChatWebhook implements IChatWebhook {
         private readonly secret: string,
         private readonly flowsOrgToken: string,
         private readonly roomFieldName: string,
+        private readonly logger: ILogger,
+        private readonly debugEnabled: boolean,
     ) { }
+
+    private debug(...items: Array<any>): void {
+        if (this.debugEnabled) {
+            this.logger.debug(items);
+        }
+    }
 
     public async onDirectMessage(
         callbackUrl: string,
@@ -24,11 +32,12 @@ export default class ChatWebhook implements IChatWebhook {
         message?: string,
         attachments?: Array<IMessageAttachment>,
     ): Promise<void> {
-
+        this.debug(`Sending direct message to ${userUsername}`);
         const reqOptions = this.requestOptions();
         reqOptions['data'] = await this.createPayload(ChatType.DIRECT, userUsername, userUsername, userFullName, message, attachments);
 
-        await this.http.post(callbackUrl, reqOptions);
+        const res = await this.http.post(callbackUrl, reqOptions);
+        this.debug(`Direct message sent to ${userUsername}`, res);
     }
 
     public async onLivechatMessage(
@@ -39,9 +48,15 @@ export default class ChatWebhook implements IChatWebhook {
         message?: string,
         attachments?: Array<IMessageAttachment>,
     ): Promise<void> {
+        this.debug(`Sending livechat message to ${visitorToken}`);
         const reqOptions = this.requestOptions();
         reqOptions['data'] = await this.createPayload(ChatType.LIVECHAT, visitorToken, userUsername, userFullName, message, attachments);
-        await this.http.post(callbackUrl, reqOptions);
+        const res = await this.http.post(callbackUrl, reqOptions);
+        if (res.statusCode !== 200) {
+            this.debug(`Error sending livechat message to ${visitorToken}`, res);
+            return;
+        }
+        this.debug(`Livechat message successfully sent to ${visitorToken}`, res);
     }
 
     private async getAttachments(attachments: Array<IMessageAttachment>): Promise<any> {

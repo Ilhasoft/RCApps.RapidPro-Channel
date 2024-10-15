@@ -8,6 +8,7 @@ export const CONFIG_FLOWS_ORG_TOKEN = 'config_flows_org_token';
 export const CONFIG_ROOM_FIELD_NAME = 'config_room_field_name';
 export const CONFIG_CLOSE_ROOM_FLOW = 'config_close_room_flow';
 export const CONFIG_TRANSFER_ROOM_FLOW = 'config_transfer_room_flow';
+export const CONFIG_ADVANCED_LOGGING = 'config_advanced_logging';
 
 export const APP_SETTINGS: Array<ISetting> = [
     {
@@ -57,5 +58,13 @@ export const APP_SETTINGS: Array<ISetting> = [
         required: true,
         public: false,
         i18nLabel: CONFIG_TRANSFER_ROOM_FLOW,
+    },
+    {
+        id: CONFIG_ADVANCED_LOGGING,
+        type: SettingType.BOOLEAN,
+        packageValue: false,
+        required: true,
+        public: false,
+        i18nLabel: CONFIG_ADVANCED_LOGGING,
     },
 ];

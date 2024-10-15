@@ -1,6 +1,6 @@
 import 'mocha';
 
-import { HttpStatusCode } from '@rocket.chat/apps-engine/definition/accessors';
+import { HttpStatusCode, ILogger } from '@rocket.chat/apps-engine/definition/accessors';
 import { assert } from 'chai';
 import { instance, mock, verify, when } from 'ts-mockito';
 
@@ -18,6 +18,7 @@ describe('IChatRepository', () => {
     let mockedInternal: IChatInternalDataSource;
     let mockedWebhook: IChatWebhook;
     let mockedPersistence: IAppDataSource;
+    let mockedLogger: ILogger;
     let chatRepo: IChatRepository;
 
     describe('#sendMessage()', () => {
@@ -26,10 +27,14 @@ describe('IChatRepository', () => {
             mockedInternal = mock<IChatInternalDataSource>();
             mockedWebhook = mock<IChatWebhook>();
             mockedPersistence = mock<IAppDataSource>();
+            mockedLogger = mock<ILogger>();
             chatRepo = new ChatRepositoryImpl(
                 instance(mockedInternal),
                 instance(mockedWebhook),
-                instance(mockedPersistence));
+                instance(mockedPersistence),
+                instance(mockedLogger),
+                true
+            );
         });
 
         it(`should throw an error when the bot User doesn't exists`, async () => {
@@ -232,7 +237,10 @@ describe('IChatRepository', () => {
             chatRepo = new ChatRepositoryImpl(
                 instance(mockedInternal),
                 instance(mockedWebhook),
-                instance(mockedPersistence));
+                instance(mockedPersistence),
+                instance(mockedLogger),
+                true
+            );
         });
 
         it('should call from app persistence', async () => {
@@ -290,7 +298,10 @@ describe('IChatRepository', () => {
             chatRepo = new ChatRepositoryImpl(
                 instance(mockedInternal),
                 instance(mockedWebhook),
-                instance(mockedPersistence));
+                instance(mockedPersistence),
+                instance(mockedLogger),
+                true
+            );
         });
 
         it('should call from app persistence', async () => {

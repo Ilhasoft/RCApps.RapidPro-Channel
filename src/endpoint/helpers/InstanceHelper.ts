@@ -1,4 +1,4 @@
-import { IHttp, IModify, IPersistence, IPersistenceRead, IRead } from '@rocket.chat/apps-engine/definition/accessors';
+import { IHttp, ILogger, IModify, IPersistence, IPersistenceRead, IRead } from '@rocket.chat/apps-engine/definition/accessors';
 
 import IAppDataSource from '../../data/app/IAppDataSource';
 import IChatInternalDataSource from '../../data/chat/IChatInternalDataSource';
@@ -13,9 +13,9 @@ export default class InstanceHelper {
         return new ChatAppsEngine(read, modify, http);
     }
 
-    public static async newDefaultChatWebhook(http: IHttp, read: IRead, secret: string, flowsOrgToken: string, roomFieldName: string): Promise<IChatWebhook> {
+    public static async newDefaultChatWebhook(http: IHttp, read: IRead, secret: string, flowsOrgToken: string, roomFieldName: string, logger: ILogger, debugEnabled: boolean): Promise<IChatWebhook> {
         const loweredRoomFieldName = roomFieldName.toLowerCase();
-        return new ChatWebhook(read, http, secret, flowsOrgToken, loweredRoomFieldName);
+        return new ChatWebhook(read, http, secret, flowsOrgToken, loweredRoomFieldName, logger, debugEnabled);
     }
 
     public static async newDefaultAppPersistence(read: IPersistenceRead, persis: IPersistence): Promise<IAppDataSource> {
