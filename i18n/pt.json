@@ -4,5 +4,6 @@
     "config_flows_org_token": "Token da Org do Flows",
     "config_room_field_name": "Campo de Contato da Sala",
     "config_close_room_flow": "UUID do Fluxo de Fechamento",
-    "config_transfer_room_flow": "UUID do Fluxo de Transferência"
+    "config_transfer_room_flow": "UUID do Fluxo de Transferência",
+    "config_advanced_logging": "Habilitar mais logs"
 }

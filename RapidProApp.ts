@@ -20,9 +20,10 @@ import { CheckSecretEndpoint } from './src/endpoint/CheckSecretEndpoint';
 import InstanceHelper from './src/endpoint/helpers/InstanceHelper';
 import { MessageEndpoint } from './src/endpoint/MessageEndpoint';
 import { SettingsEndpoint } from './src/endpoint/SettingsEndpoint';
-import { APP_SETTINGS, CONFIG_APP_SECRET, CONFIG_CLOSE_ROOM_FLOW, CONFIG_FLOWS_ORG_TOKEN, CONFIG_ROOM_FIELD_NAME, CONFIG_TRANSFER_ROOM_FLOW } from './src/settings/Constants';
+import { APP_SETTINGS, CONFIG_ADVANCED_LOGGING, CONFIG_APP_SECRET, CONFIG_CLOSE_ROOM_FLOW, CONFIG_FLOWS_ORG_TOKEN, CONFIG_ROOM_FIELD_NAME, CONFIG_TRANSFER_ROOM_FLOW } from './src/settings/Constants';
 
 export class RapidProIntegrationApp extends App implements IPostMessageSent, IPostLivechatRoomClosed, IPostLivechatRoomTransferred {
+
     constructor(info: IAppInfo, logger: ILogger, accessors: IAppAccessors) {
         super(info, logger, accessors);
     }
@@ -44,6 +45,12 @@ export class RapidProIntegrationApp extends App implements IPostMessageSent, IPo
         APP_SETTINGS.forEach((setting) => configuration.settings.provideSetting(setting));
     }
 
+    private debug(enabled: boolean, ...items: Array<any>): void {
+        if (enabled) {
+            this.getLogger().debug(items);
+        }
+    }
+
     public async executePostMessageSent(
         message: IMessage,
         read: IRead,
@@ -51,8 +58,11 @@ export class RapidProIntegrationApp extends App implements IPostMessageSent, IPo
         persistence: IPersistence,
         modify: IModify,
     ): Promise<void> {
+        const debugEnabled = await read.getEnvironmentReader().getSettings().getValueById(CONFIG_ADVANCED_LOGGING);
+
         // Do not foward any message that a bot has sent
         if (message.sender.roles && message.sender.roles.includes('bot')) {
+            this.debug(debugEnabled, 'Bot message, ignoring', message.id);
             return;
         }
 
@@ -62,12 +72,15 @@ export class RapidProIntegrationApp extends App implements IPostMessageSent, IPo
 
         const chatRepo = new ChatRepositoryImpl(
             await InstanceHelper.newDefaultChatInternalDataSource(read, modify, http),
-            await InstanceHelper.newDefaultChatWebhook(http, read, secret, flowsOrgToken, roomFieldName),
+            await InstanceHelper.newDefaultChatWebhook(http, read, secret, flowsOrgToken, roomFieldName, this.getLogger(), debugEnabled),
             await InstanceHelper.newDefaultAppPersistence(read.getPersistenceReader(), persistence),
+            this.getLogger(),
+            debugEnabled
         );
 
         // empty message handle
         if (!message.attachments && !message.text) {
+            this.debug(debugEnabled, 'Empty message, ignoring', message.id);
             return;
         }
 
@@ -76,13 +89,16 @@ export class RapidProIntegrationApp extends App implements IPostMessageSent, IPo
 
             // user is still on queue and doesnt have an configured agent yet
             if (!room.servedBy || (message.sender.roles && message.sender.roles.includes('livechat-agent'))) {
+                this.debug(debugEnabled, 'User is still on queue or is an agent message, ignoring', message.id);
                 return;
             }
 
             if (roomFieldName.trim() && flowsOrgToken) {
                 await chatRepo.onVisitorRoomIdField(room.visitor.token, room.id);
+                this.debug(debugEnabled, 'Visitor room id updated', room.visitor.token, room.id);
             }
 
+            this.debug(debugEnabled, 'Valid livechat message, preparing to send webhook', message.id);
             await chatRepo.onLivechatMessage(
                 room.visitor.token,
                 room.servedBy.username,
@@ -91,9 +107,11 @@ export class RapidProIntegrationApp extends App implements IPostMessageSent, IPo
                 message.text,
                 message.attachments
             );
+            this.debug(debugEnabled, 'Livechat message sent', message.id);
         } else if (message.room.type === RoomType.DIRECT_MESSAGE) {
             const room = message.room;
             if (room['_unmappedProperties_'].usernames.length > 2) {
+                this.debug(debugEnabled, 'Group chat, ignoring', message.id);
                 return;
             }
             // since this is a direct chat, there's always only two users, then we remove the sender and get the other one to check if is a valid bot
@@ -101,7 +119,10 @@ export class RapidProIntegrationApp extends App implements IPostMessageSent, IPo
             const botUsername = directUsers.filter((value, index, arr) => {
                 return value !== message.sender.username;
             })[0];
+
+            this.debug(debugEnabled, 'Valid direct message, preparing to send webhook', message.id);
             await chatRepo.onDirectMessage(message.sender.username, botUsername, message.sender.name, message.text, message.attachments);
+            this.debug(debugEnabled, 'Direct message sent', message.id);
         }
 
     }
@@ -113,6 +134,8 @@ export class RapidProIntegrationApp extends App implements IPostMessageSent, IPo
         persistence: IPersistence,
         modify: IModify,
     ) {
+        const debugEnabled = await read.getEnvironmentReader().getSettings().getValueById(CONFIG_ADVANCED_LOGGING);
+
         try {
             const visitor: IVisitor = data.visitor as IVisitor;
 
@@ -123,12 +146,16 @@ export class RapidProIntegrationApp extends App implements IPostMessageSent, IPo
 
             const chatRepo = new ChatRepositoryImpl(
                 await InstanceHelper.newDefaultChatInternalDataSource(read, modify, http),
-                await InstanceHelper.newDefaultChatWebhook(http, read, secret, flowsOrgToken, roomFieldName),
+                await InstanceHelper.newDefaultChatWebhook(http, read, secret, flowsOrgToken, roomFieldName, this.getLogger(), debugEnabled),
                 await InstanceHelper.newDefaultAppPersistence(read.getPersistenceReader(), persistence),
+                this.getLogger(),
+                debugEnabled
             );
 
             if (flowUuid) {
+                this.debug(debugEnabled, 'Valid livechat room closed, preparing to send webhook', data.id);
                 await chatRepo.onLivechatRoomClosed(visitor.token, flowUuid, data);
+                this.debug(debugEnabled, 'Livechat room closed sent', data.id);
             }
         } catch (e) {
             this.getLogger().error(e.message);
@@ -136,6 +163,8 @@ export class RapidProIntegrationApp extends App implements IPostMessageSent, IPo
     }
 
     public async executePostLivechatRoomTransferred(context: ILivechatTransferEventContext, read: IRead, http: IHttp, persistence: IPersistence, modify: IModify) {
+        const debugEnabled = await read.getEnvironmentReader().getSettings().getValueById(CONFIG_ADVANCED_LOGGING);
+
         try {
             const visitor: any = (context.room as ILivechatRoom).visitor;
 
@@ -146,12 +175,16 @@ export class RapidProIntegrationApp extends App implements IPostMessageSent, IPo
 
             const chatRepo = new ChatRepositoryImpl(
                 await InstanceHelper.newDefaultChatInternalDataSource(read, modify, http),
-                await InstanceHelper.newDefaultChatWebhook(http, read, secret, flowsOrgToken, roomFieldName),
+                await InstanceHelper.newDefaultChatWebhook(http, read, secret, flowsOrgToken, roomFieldName, this.getLogger(), debugEnabled),
                 await InstanceHelper.newDefaultAppPersistence(read.getPersistenceReader(), persistence),
+                this.getLogger(),
+                debugEnabled
             );
 
             if (flowUuid) {
+                this.debug(debugEnabled, 'Valid livechat room transferred, preparing to send webhook', context.room.id);
                 await chatRepo.onLivechatRoomTransferred(visitor.token, flowUuid, context);
+                this.debug(debugEnabled, 'Livechat room transferred sent', context.room.id);
             }
         } catch (e) {
             this.getLogger().error(e.message);
