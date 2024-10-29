@@ -99,7 +99,7 @@ export class RapidProIntegrationApp extends App implements IPostMessageSent, IPo
             }
 
             this.debug(debugEnabled, 'Valid livechat message, preparing to send webhook', message.id);
-            await chatRepo.onLivechatMessage(
+            const error = await chatRepo.onLivechatMessage(
                 room.visitor.token,
                 room.servedBy.username,
                 room.visitor.name,
@@ -107,6 +107,10 @@ export class RapidProIntegrationApp extends App implements IPostMessageSent, IPo
                 message.text,
                 message.attachments
             );
+            if (error) {
+                this.debug(debugEnabled, 'Livechat message failed to be sent', message.id);
+                return;
+            }
             this.debug(debugEnabled, 'Livechat message sent', message.id);
         } else if (message.room.type === RoomType.DIRECT_MESSAGE) {
             const room = message.room;

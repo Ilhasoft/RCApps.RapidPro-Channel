@@ -84,7 +84,7 @@ export default class ChatRepositoryImpl implements IChatRepository {
         userUsername: string,
         message?: string,
         attachments?: Array<IMessageAttachment>,
-    ): Promise<void> {
+    ): Promise<Error | void> {
         const callbackUrl = await this.getBotCallback(botUsername);
         if (!callbackUrl) {
             this.debug(`Could not find callback url for bot ${botUsername}`);
@@ -92,7 +92,7 @@ export default class ChatRepositoryImpl implements IChatRepository {
         }
 
         this.debug(`Sending livechat message to bot ${botUsername}`);
-        await this.chatWebhook.onLivechatMessage(callbackUrl, visitorToken, userUsername, userFullName, message, attachments);
+        return await this.chatWebhook.onLivechatMessage(callbackUrl, visitorToken, userUsername, userFullName, message, attachments);
     }
 
     private async getBotCallback(botUsername: string) {
