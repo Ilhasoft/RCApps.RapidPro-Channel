@@ -9,7 +9,7 @@ export default interface IChatRepository {
 
     onDirectMessage(userUsername: string, botUsername: string, userFullName: string, message?: string, attachments?: Array<IMessageAttachment>): Promise<void>;
 
-    onLivechatMessage(visitorToken: string, botUsername: string, userFullName: string, userUsername: string, message?: string, attachments?: Array<IMessageAttachment>): Promise<void>;
+    onLivechatMessage(visitorToken: string, botUsername: string, userFullName: string, userUsername: string, message?: string, attachments?: Array<IMessageAttachment>): Promise<Error | void>;
 
     onLivechatRoomClosed(visitorToken: string, flowUuid: string, roomData: ILivechatRoom): Promise<void>;
 

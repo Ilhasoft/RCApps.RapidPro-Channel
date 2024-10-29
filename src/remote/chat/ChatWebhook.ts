@@ -47,16 +47,32 @@ export default class ChatWebhook implements IChatWebhook {
         userFullName: string,
         message?: string,
         attachments?: Array<IMessageAttachment>,
-    ): Promise<void> {
-        this.debug(`Sending livechat message to ${visitorToken}`);
+    ): Promise<Error | void> {
+        this.debug(`Sending livechat message from ${visitorToken}`);
         const reqOptions = this.requestOptions();
         reqOptions['data'] = await this.createPayload(ChatType.LIVECHAT, visitorToken, userUsername, userFullName, message, attachments);
-        const res = await this.http.post(callbackUrl, reqOptions);
+        this.debug(`Prepared livechat message payload`, reqOptions);
+        let res = await this.http.post(callbackUrl, reqOptions);
         if (res.statusCode !== 200) {
-            this.debug(`Error sending livechat message to ${visitorToken}`, res);
-            return;
+            this.debug(`Error sending livechat message from ${visitorToken}, going to retry`, res);
+            
+            const retryCount = 3
+            const retryTimeout = 1000
+            let retry = 0
+
+            while (res.statusCode !== 200 && retry < retryCount) {
+                this.debug(`Retrying livechat message from ${visitorToken} in ${retryTimeout}ms, attempt ${retry + 1}`);
+                await new Promise(resolve => setTimeout(resolve, retryTimeout))
+                res = await this.http.post(callbackUrl, reqOptions);
+                retry += 1
+            }
+
+            if (res.statusCode !== 200) {
+                this.debug(`Error sending livechat message from ${visitorToken} after ${retryCount} attempts`, res);
+                return new Error(`Error sending livechat message from ${visitorToken}`);
+            }
         }
-        this.debug(`Livechat message successfully sent to ${visitorToken}`, res);
+        this.debug(`Livechat message successfully sent from ${visitorToken}`, res);
     }
 
     private async getAttachments(attachments: Array<IMessageAttachment>): Promise<any> {
@@ -66,15 +82,7 @@ export default class ChatWebhook implements IChatWebhook {
         attachments.forEach((attachment) => {
             const url = AttachmentUtils.getUrl(serverUrl, attachment);
             let type = AttachmentUtils.getType(attachment);
-
-            if (type === 'document') {
-                if (url.endsWith('.pdf')) {
-                    type += '/pdf';
-                    attachmentsPayload.push({ type, url });
-                }
-            } else {
-                attachmentsPayload.push({ type, url });
-            }
+            attachmentsPayload.push({ type, url });
         });
 
         return attachmentsPayload;
